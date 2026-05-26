@@ -1,4 +1,4 @@
-import { useMutation, invalidateQuery } from '@/utils/query'
+import { useMutation, invalidateQuery } from '#/utils/query.ts'
 import { ChatStore } from '../chat-page'
 import { StoreI } from './global-state'
 import { StoreApi, useStore } from './global-state'
@@ -11,7 +11,7 @@ export default function useAICompletion(chatId: number | undefined, chatStore: S
   const { setChat } = chatStore.getState()
 
   const { mutate, error, isPending } = useMutation({
-    mutationFn: async (data: { message: string; imageData?: string }) => {
+    mutationFn: async (data: { message: string; imageData?: string[] }) => {
       if (chatId == null) {
         const url = new URL('/api/chats/start', baseUrl)
         const body = JSON.stringify({ message: data.message, model, provider, imageData: data.imageData })

@@ -1,5 +1,5 @@
-import { useAction, useStoreX } from '@/utils/global-state'
-import { Ctx } from '@/chat-page'
+import { useAction, useStoreX } from '#/utils/global-state.ts'
+import { Ctx } from '#/chat-page.tsx'
 
 const modelsByProvider: Record<string, { label: string; models: { name: string; modelId: string }[] }> = {
   bedrock: {

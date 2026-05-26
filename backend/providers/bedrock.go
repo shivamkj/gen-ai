@@ -65,23 +65,22 @@ func (b *Bedrock) Call(model string, messages []Message) (*AiResponse, error) {
 
 	bedrockMessages := make([]bedrockMsg, 0, len(messages))
 	for _, msg := range messages {
-		if msg.ImageData != "" {
-			mediaType, base64Data := "", ""
-			if idx := strings.Index(msg.ImageData, ";base64,"); idx >= 0 {
-				mediaType = strings.TrimPrefix(msg.ImageData[:idx], "data:")
-				base64Data = msg.ImageData[idx+8:]
+		if len(msg.ImageData) > 0 {
+			var parts []bedrockContent
+			for _, img := range msg.ImageData {
+				mediaType, base64Data := "", ""
+				if idx := strings.Index(img, ";base64,"); idx >= 0 {
+					mediaType = strings.TrimPrefix(img[:idx], "data:")
+					base64Data = img[idx+8:]
+				}
+				parts = append(parts, bedrockContent{Type: "image", Source: &imageSource{Type: "base64", MediaType: mediaType, Data: base64Data}})
 			}
 			text := msg.Content
 			if text == "" {
 				text = "What is in this image?"
 			}
-			bedrockMessages = append(bedrockMessages, bedrockMsg{
-				Role: msg.Role,
-				Content: []bedrockContent{
-					{Type: "image", Source: &imageSource{Type: "base64", MediaType: mediaType, Data: base64Data}},
-					{Type: "text", Text: text},
-				},
-			})
+			parts = append(parts, bedrockContent{Type: "text", Text: text})
+			bedrockMessages = append(bedrockMessages, bedrockMsg{Role: msg.Role, Content: parts})
 		} else {
 			bedrockMessages = append(bedrockMessages, bedrockMsg{Role: msg.Role, Content: msg.Content})
 		}

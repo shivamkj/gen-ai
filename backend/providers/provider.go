@@ -2,9 +2,9 @@ package providers
 
 // Message represents a chat message sent to AI APIs.
 type Message struct {
-	Role      string `json:"role"`
-	Content   string `json:"content"`
-	ImageData string `json:"image_data,omitempty"`
+	Role      string   `json:"role"`
+	Content   string   `json:"content"`
+	ImageData []string `json:"image_data,omitempty"`
 }
 
 // AiResponse is the unified response from any AI provider.

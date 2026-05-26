@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 )
 
 const systemPrompt = "You are an AI programming assistant. Don't explain code unless asked. "
@@ -45,10 +46,10 @@ func handleGetAllChats(w http.ResponseWriter, _ *http.Request) {
 
 func handleStartChat(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Message   string `json:"message"`
-		Model     string `json:"model"`
-		Provider  string `json:"provider"`
-		ImageData string `json:"imageData"`
+		Message   string   `json:"message"`
+		Model     string   `json:"model"`
+		Provider  string   `json:"provider"`
+		ImageData []string `json:"imageData"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -84,15 +85,15 @@ func handleReplyChat(w http.ResponseWriter, r *http.Request) {
 	chatID := r.PathValue("id")
 
 	var req struct {
-		Message   string `json:"message"`
-		ImageData string `json:"imageData"`
+		Message   string   `json:"message"`
+		ImageData []string `json:"imageData"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if req.Message == "" {
-		http.Error(w, "message is required", http.StatusBadRequest)
+	if req.Message == "" && len(req.ImageData) == 0 {
+		http.Error(w, "message or image is required", http.StatusBadRequest)
 		return
 	}
 
@@ -125,20 +126,28 @@ func handleGetMessages(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 
 	type msgRow struct {
-		ID          int64   `json:"id"`
-		Role        string  `json:"role"`
-		Content     string  `json:"content"`
-		ImageData   *string `json:"image_data"`
-		CreatedAt   string  `json:"created_at"`
-		InputToken  *int    `json:"input_token"`
-		OutputToken *int    `json:"output_token"`
+		ID          int64    `json:"id"`
+		Role        string   `json:"role"`
+		Content     string   `json:"content"`
+		ImageData   []string `json:"image_data"`
+		CreatedAt   string   `json:"created_at"`
+		InputToken  *int     `json:"input_token"`
+		OutputToken *int     `json:"output_token"`
 	}
 	messages := []msgRow{}
 	for rows.Next() {
 		var m msgRow
-		if err := rows.Scan(&m.ID, &m.Role, &m.Content, &m.ImageData, &m.CreatedAt, &m.InputToken, &m.OutputToken); err != nil {
+		var imgData *string
+		if err := rows.Scan(&m.ID, &m.Role, &m.Content, &imgData, &m.CreatedAt, &m.InputToken, &m.OutputToken); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
+		}
+		if imgData != nil && *imgData != "" {
+			if strings.HasPrefix(*imgData, "[") {
+				json.Unmarshal([]byte(*imgData), &m.ImageData)
+			} else {
+				m.ImageData = []string{*imgData}
+			}
 		}
 		messages = append(messages, m)
 	}

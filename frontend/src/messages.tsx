@@ -1,10 +1,10 @@
-import { useQuery, useMutation, invalidateQuery } from '@/utils/query'
+import { useQuery, useMutation, invalidateQuery } from '#/utils/query.ts'
 import { useEffect, useRef } from 'preact/hooks'
-import { TrashIcon } from '@/components/icons.tsx'
+import { TrashIcon } from '#/components/icons.tsx'
 import { ScrollArea } from './components/scroll-area'
 import { Markdown } from './components/markdown'
 import { Avatar } from './components/avatar'
-import { baseUrl } from '@/utils/hooks'
+import { baseUrl } from '#/utils/hooks.tsx'
 
 export function Messages({ chatId }: { chatId: number | undefined }) {
   const { data } = useQuery({
@@ -46,13 +46,16 @@ export function Messages({ chatId }: { chatId: number | undefined }) {
           className={`relative mb-4 flex ${message.role == 'assistant' ? 'flex-row-reverse justify-end' : ''}`}>
           <div
             className={`border-zinc-800 bg-gray-900 shadow-lg text-zinc-50 rounded-xl border p-6 overflow-x-hidden${message.role == 'user' ? ' bg-blue-500 text-white ml-auto' : ''}`}>
-            {message.image_data && (
-              <div className="mb-4">
-                <img
-                  src={message.image_data}
-                  alt="Uploaded"
-                  className="max-w-full max-h-96 rounded-lg border border-gray-500"
-                />
+            {message.image_data && message.image_data.length > 0 && (
+              <div className="mb-4 flex gap-2 flex-wrap">
+                {message.image_data.map((img: string, i: number) => (
+                  <img
+                    key={i}
+                    src={img}
+                    alt="Uploaded"
+                    className="max-w-full max-h-96 rounded-lg border border-gray-500"
+                  />
+                ))}
               </div>
             )}
             <Markdown content={message.content} />

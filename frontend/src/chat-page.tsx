@@ -2,11 +2,11 @@ import { createContext } from 'preact'
 import { useState, useRef } from 'preact/hooks'
 import { BotIcon, HistoryIcon, ImagePlusIcon, XIcon, SendIcon } from './components/icons'
 import { ContextVal, initStore, StoreI, SetState, useStore } from './utils/global-state'
-import useAICompletion from '@/utils/hooks'
-import { Loader } from '@/components/loader'
-import { ChatHistory } from '@/chat-history'
-import { models, SelectModel } from '@/select-models'
-import { Messages } from '@/messages'
+import useAICompletion from '#/utils/hooks.tsx'
+import { Loader } from '#/components/loader.tsx'
+import { ChatHistory } from '#/chat-history.tsx'
+import { models, SelectModel } from '#/select-models.tsx'
+import { Messages } from '#/messages.tsx'
 
 export const Ctx = createContext<ContextVal<typeof chatStore>>(null)
 
@@ -40,41 +40,41 @@ function handleTextInputSize(e: Event) {
 export const ChatInterface = () => {
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [selectedImages, setSelectedImages] = useState<string[]>([])
   const storeValue = initStore<StoreI<ChatStore>>(chatStore)
   const selectedChatId = useStore(storeValue, (s) => s.seletedChatId)
   const { setChat } = storeValue.getState()
   const { mutate, isPending } = useAICompletion(selectedChatId, storeValue)
 
   function handleImageSelect(e: Event) {
-    const file = (e.target as HTMLInputElement).files?.[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file')
-      return
+    const files = (e.target as HTMLInputElement).files
+    if (!files || files.length === 0) return
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith('image/')) {
+        alert('Please select image files only')
+        return
+      }
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const result = e.target?.result as string
+        setSelectedImages((prev) => [...prev, result])
+      }
+      reader.readAsDataURL(file)
     }
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const result = e.target?.result as string
-      setSelectedImage(result)
-    }
-    reader.readAsDataURL(file)
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   function handleSend() {
     if (inputRef.current == null) return
     const input = inputRef.current!.value.trim()
     inputRef.current.value = ''
-    if (!input && !selectedImage) return
-    mutate({ message: input || 'What is in this image?', imageData: selectedImage || undefined })
-    setSelectedImage(null)
+    if (!input && selectedImages.length === 0) return
+    mutate({ message: input || 'What is in this image?', imageData: selectedImages.length > 0 ? selectedImages : undefined })
+    setSelectedImages([])
   }
 
-  function clearImage() {
-    setSelectedImage(null)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
+  function removeImage(index: number) {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index))
   }
 
   return (
@@ -109,18 +109,22 @@ export const ChatInterface = () => {
           {isPending && <Loader />}
 
           <div className="p-4 border-t bg-gray-900 border-gray-500">
-            {selectedImage && (
-              <div className="mb-2 relative inline-block">
-                <img src={selectedImage} alt="Selected" className="max-h-32 rounded-lg border border-gray-500" />
-                <button
-                  onClick={clearImage}
-                  className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 hover:bg-red-600">
-                  <XIcon className="h-4 w-4 text-white" />
-                </button>
+            {selectedImages.length > 0 && (
+              <div className="mb-2 flex gap-2 flex-wrap">
+                {selectedImages.map((img, index) => (
+                  <div key={index} className="relative inline-block">
+                    <img src={img} alt="Selected" className="max-h-32 rounded-lg border border-gray-500" />
+                    <button
+                      onClick={() => removeImage(index)}
+                      className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 hover:bg-red-600">
+                      <XIcon className="h-4 w-4 text-white" />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
             <div className="flex gap-2 items-center">
-              <input type="file" ref={fileInputRef} onChange={handleImageSelect} accept="image/*" className="hidden" />
+              <input type="file" ref={fileInputRef} onChange={handleImageSelect} accept="image/*" multiple className="hidden" />
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="border border-gray-500 rounded-sm p-4 hover:bg-gray-800"

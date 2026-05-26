@@ -55,16 +55,14 @@ type (
 func (o *OpenAI) Call(model string, messages []Message) (*AiResponse, error) {
 	oaiMessages := make([]oaiMessage, 0, len(messages))
 	for _, msg := range messages {
-		if msg.ImageData != "" {
-			oaiMessages = append(oaiMessages, oaiMessage{
-				Role: msg.Role,
-				Content: []openAiContent{
-					{Type: "text", Text: msg.Content},
-					{Type: "image_url", ImageURL: &struct {
-						URL string `json:"url"`
-					}{URL: msg.ImageData}},
-				},
-			})
+		if len(msg.ImageData) > 0 {
+			parts := []openAiContent{{Type: "text", Text: msg.Content}}
+			for _, img := range msg.ImageData {
+				parts = append(parts, openAiContent{Type: "image_url", ImageURL: &struct {
+					URL string `json:"url"`
+				}{URL: img}})
+			}
+			oaiMessages = append(oaiMessages, oaiMessage{Role: msg.Role, Content: parts})
 		} else {
 			oaiMessages = append(oaiMessages, oaiMessage{Role: msg.Role, Content: msg.Content})
 		}

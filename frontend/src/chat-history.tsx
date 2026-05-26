@@ -1,8 +1,8 @@
-import { useQuery, useMutation, invalidateQuery } from '@/utils/query'
-import { baseUrl } from '@/utils/hooks'
-import { Ctx } from '@/chat-page'
-import { TrashIcon } from '@/components/icons'
-import { useAction } from '@/utils/global-state'
+import { useQuery, useMutation, invalidateQuery } from '#/utils/query.ts'
+import { baseUrl } from '#/utils/hooks.tsx'
+import { Ctx } from '#/chat-page.tsx'
+import { TrashIcon } from '#/components/icons.tsx'
+import { useAction } from '#/utils/global-state.ts'
 
 type ChatHistory = { id: number; model: string; provider: string; title: string; created_at: string }
 
