@@ -3,3 +3,4 @@ dist/
 chats.db
 /.env*
 /gen-ai
+.DS_Store
